@@ -54,33 +54,46 @@ class DiScopeBuilder extends StatefulWidget {
 class DiScopeBuilderState extends State<DiScopeBuilder> {
   BaseDiModule? module;
   bool isInitialized = false;
-  Key uniqueKey = UniqueKey();
 
-  /// Initializes or updates the module when dependencies change.
+  /// Creates the module once, then keeps its scope in sync with the parent.
+  ///
+  /// [didChangeDependencies] fires not only on first mount but any time an
+  /// ancestor [BaseDiModule] calls `notifyListeners()` (since the parent is
+  /// provided via [InheritedNotifier]). [createModule] must therefore only
+  /// be invoked once per [State] lifetime; otherwise a fresh module instance
+  /// would be created and the whole subtree disposed on every unrelated
+  /// notification from an ancestor scope.
+  ///
+  /// `_updateScope` still has to run on every call though:
+  /// [DiContainer.fromScope] snapshots the parent's entities at creation
+  /// time rather than holding a live reference, so the snapshot needs to be
+  /// refreshed whenever the parent's registrations may have changed
+  /// (reparenting via a [GlobalKey], or the parent resetting its scope).
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final newModule = widget.createModule?.call() ?? EmptyDiModule();
 
-    if (module == newModule || (newModule._isInitialized && module == null)) {
-      isInitialized = true;
+    final currentModule = module;
+    if (currentModule == null) {
+      final newModule = widget.createModule?.call() ?? EmptyDiModule();
       module = newModule;
-      module?._updateScope(_ParentModuleProvider.of(context));
+      if (newModule._isInitialized) {
+        isInitialized = true;
+        newModule._updateScope(_ParentModuleProvider.of(context));
+      } else {
+        newModule._pushScope(
+          () {
+            if (mounted) {
+              setState(() {
+                isInitialized = true;
+              });
+            }
+          },
+          _ParentModuleProvider.of(context),
+        );
+      }
     } else {
-      isInitialized = false;
-      module?.dispose();
-      module = newModule;
-      module?._pushScope(
-        () {
-          if (mounted) {
-            setState(() {
-              isInitialized = true;
-            });
-          }
-        },
-        _ParentModuleProvider.of(context),
-      );
-      uniqueKey = UniqueKey();
+      currentModule._updateScope(_ParentModuleProvider.of(context));
     }
   }
 
@@ -98,7 +111,6 @@ class DiScopeBuilderState extends State<DiScopeBuilder> {
     final module = this.module;
     return isInitialized && module != null
         ? _ParentModuleProvider(
-            key: uniqueKey,
             module: module,
 
             /// [Builder] for providing the correct context.

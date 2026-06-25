@@ -81,9 +81,9 @@ class DiScopeRoot extends StatelessWidget {
 /// be instantiated directly by the developer.
 class _ParentModuleProvider extends InheritedNotifier<BaseDiModule> {
   _ParentModuleProvider({
-    required super.key,
     required this.module,
     required super.child,
+    super.key,
   }) : super(notifier: module);
 
   /// The current [BaseDiModule] being provided to the widget tree.

@@ -66,4 +66,56 @@ void main() {
     expect(state.module!.get<String>(), count.toString());
     expect(state.isInitialized, isTrue);
   });
+
+  testWidgets(
+    'parent notifyListeners (e.g. via navigation) does not recreate '
+    'an already-created child module',
+    (tester) async {
+      var createCount = 0;
+      late MockParentModule parentModule;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: DiScopeBuilder(
+            createModule: () {
+              parentModule = MockParentModule();
+              return parentModule;
+            },
+            builder: (context, parentScope) {
+              return DiScopeBuilder(
+                createModule: () {
+                  createCount++;
+                  return MockModule();
+                },
+                builder: (context, module) {
+                  return const Text('DiScopeBuilder Test');
+                },
+              );
+            },
+          ),
+        ),
+      );
+
+      expect(createCount, 1);
+
+      var context = tester.element(find.text('DiScopeBuilder Test'));
+      final childState =
+          context.findAncestorStateOfType<DiScopeBuilderState>()!;
+      final childModule = childState.module;
+
+      // Simulate what happens on navigation: an ancestor module (e.g. used
+      // as a GoRouter refreshListenable) notifies its listeners without the
+      // widget tree itself changing.
+      parentModule.notifyListeners();
+      await tester.pump();
+
+      expect(
+        createCount,
+        1,
+        reason: 'createModule must not be invoked again on a plain '
+            'dependency notification',
+      );
+      expect(childState.module, same(childModule));
+    },
+  );
 }
