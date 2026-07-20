@@ -17,5 +17,22 @@ abstract class DiModule extends BaseDiModule implements Scope {
   ///
   /// - [it]: The [SyncRegistrar] used for registering
   /// dependencies synchronously.
+  ///
+  /// To reuse registrations from another module, call its [setup]
+  /// with the same registrar:
+  ///
+  /// ```dart
+  /// @override
+  /// void setup(SyncRegistrar it) {
+  ///   OtherDiModule().setup(it);
+  /// }
+  /// ```
+  ///
+  /// This is composition rather than scope inheritance: the nested module
+  /// registers its services directly into this module's container, so all
+  /// registrations share one scope (duplicate types will throw). The nested
+  /// module instance itself is not initialized and cannot be used as a
+  /// [Scope]. Note that calling `init()` instead would not share anything —
+  /// the nested module would get its own isolated container.
   void setup(SyncRegistrar it);
 }
