@@ -1,6 +1,6 @@
 name: take_it
 description: Scoped Service Locator with Constructor Injections for Dart and Flutter.
-version: 1.0.3
+version: 1.0.4
 
 repository: https://github.com/ron-diesel/take_it
 homepage: https://github.com/ron-diesel/take_it
