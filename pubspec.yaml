@@ -1,10 +1,10 @@
 name: take_it
 description: Scoped Service Locator with Constructor Injections for Dart and Flutter.
-version: 1.0.1
+version: 1.0.4
 
-repository: https://github.com/tekmates/take_it
-homepage: https://github.com/tekmates/take_it
-issue_tracker: https://github.com/tekmates/take_it/issues
+repository: https://github.com/ron-diesel/take_it
+homepage: https://github.com/ron-diesel/take_it
+issue_tracker: https://github.com/ron-diesel/take_it/issues
 
 platforms:
   android:

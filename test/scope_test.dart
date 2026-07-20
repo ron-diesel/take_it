@@ -4,6 +4,9 @@ import 'package:take_it/src/di_module/base_di_module.dart';
 import 'package:take_it/src/registrar/sync_registrar.dart';
 
 void main() {
+  final blueKey = Key("blue_key");
+
+
   Widget getUut() => MaterialApp(
         home: DiScopeBuilder(
             createModule: () => _RedDiModule(),
@@ -19,6 +22,7 @@ void main() {
                         );
                       }),
                   DiScopeBuilder(
+                    key: blueKey,
                       createModule: () => _BlueDiModule(),
                       builder: (context, module) {
                         return Column(
@@ -82,15 +86,10 @@ void main() {
       await tester.pumpWidget(getUut());
       await tester.pumpAndSettle();
 
-
-      final blueTextFinder = findTextByColor(Colors.blue);
-      final blueDiScopeFinder = find.ancestor(
-        of: blueTextFinder,
-        matching: find.byType(DiScopeBuilder<_BlueDiModule>),
-      );
+      final blueDiScopeFinder = find.byKey(blueKey);
 
       final blueDiScopeBuilderState =
-          tester.state<DiScopeBuilderState<_BlueDiModule>>(blueDiScopeFinder);
+      tester.state<DiScopeBuilderState>(blueDiScopeFinder);
 
       blueDiScopeBuilderState.module?.resetTest();
       await tester.pumpAndSettle();

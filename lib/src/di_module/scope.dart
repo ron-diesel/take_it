@@ -6,7 +6,8 @@ abstract interface class Scope {
   /// Checks whether an object of the specified type [T] is registered
   /// within the current scope.
   ///
-  /// Returns `true` if an instance of type [T] is registered, otherwise `false`.
+  /// Returns `true` if an instance of type [T] is registered,
+  /// otherwise `false`.
   bool isRegistered<T extends Object>();
 
   /// Retrieves an object of the specified type [T] that is registered
@@ -20,8 +21,8 @@ abstract interface class Scope {
     dynamic param,
   });
 
-  /// Attempts to retrieve an object of the specified type [T] that is registered
-  /// in the current scope.
+  /// Attempts to retrieve an object of the specified
+  /// type [T] that is registered in the current scope.
   ///
   /// If an object of type [T] is not registered, this method returns `null`
   /// instead of throwing an exception.

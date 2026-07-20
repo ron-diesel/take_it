@@ -13,6 +13,7 @@ void main() {
   }) async {
     void log(Object? value) {
       if (ignoreLogs) return;
+// ignore: avoid_print
       print(value);
     }
 
@@ -27,7 +28,8 @@ void main() {
         final sw = Stopwatch()..start();
         final value = scope.get<_ValueClass1>().value;
         sw.stop();
-        log("ComparisonTestFor containers: $containerCount scopeCount: $scopeCount");
+        final label = 'ComparisonTestFor containers:';
+        log("$label $containerCount scopeCount: $scopeCount");
         log('take_it 1: ${sw.elapsedMicroseconds} µs');
         final sw2 = Stopwatch()..start();
         // ignore: unused_local_variable

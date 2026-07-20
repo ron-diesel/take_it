@@ -99,6 +99,36 @@ void setup(SyncRegistrar it) {
 }
 ```
 
+### Composing Modules
+
+A module can include the registrations of another module by calling its `setup` with the same registrar:
+
+```dart
+class FeatureDiModule extends DiModule {
+  @override
+  void setup(SyncRegistrar it) {
+    it.registerFactory(() => FeatureBloc());
+
+    // Include all registrations from NetworkDiModule into this scope.
+    NetworkDiModule().setup(it);
+  }
+}
+```
+
+This is **composition, not scope inheritance**: the nested module registers its services directly into the outer
+module's container, so everything ends up in one shared scope. This is useful for splitting a large module into
+reusable parts without introducing extra levels in the widget tree.
+
+Keep in mind:
+
+- The nested module instance itself is never initialized — it only contributes registrations and cannot be used as a
+  scope on its own.
+- Since all registrations land in the same scope, a type registered by both modules will throw an
+  "already registered in current scope" exception. Overriding a type is only possible in a child scope created via
+  `DiScopeBuilder`.
+- Calling `init()` on a module inside another module's `setup` does **not** share anything: the nested module gets its
+  own isolated container, with no access to the outer module's registrations.
+
 ### Asynchronous Dependencies
 
 You can register asynchronous dependencies using DiModuleAsync. This allows for waiting on async operations, like
