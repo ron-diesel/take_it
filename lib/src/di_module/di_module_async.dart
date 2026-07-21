@@ -9,6 +9,8 @@ part of 'base_di_module.dart';
 /// using an [AsyncRegistrar], which handles the registration of async
 /// factories and instances.
 abstract class DiModuleAsync extends BaseDiModule implements Scope {
+  DiModuleAsync({super.dependencies = const []});
+
   /// Asynchronously sets up the module by registering dependencies
   /// into the provided [AsyncRegistrar].
   ///

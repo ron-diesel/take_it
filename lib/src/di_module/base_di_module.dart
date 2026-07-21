@@ -24,6 +24,9 @@ part 'di_module_async.dart';
 /// This class is sealed and extends [ChangeNotifier], which means it can notify
 /// listeners about changes in the state.
 sealed class BaseDiModule extends ChangeNotifier implements Scope {
+  BaseDiModule({this.dependencies = const []});
+  final List<BaseDiModule> dependencies;
+
   DiContainer _diContainer = DiContainer();
 
   bool _isInitialized = false;
@@ -47,25 +50,44 @@ sealed class BaseDiModule extends ChangeNotifier implements Scope {
   ///
   /// - [onInit]: Callback to be executed when initialization completes.
   /// - [isNeedNotify]: If `true`, notifies listeners after initialization.
-  void _init(Function() onInit, {bool isNeedNotify = true}) {
-    final module = this;
-
+  void _runSetup(Function() onInit, BaseDiModule module) {
     switch (module) {
       case DiModule():
         module.setup(_diContainer);
         onInit();
-        break;
       case DiModuleAsync():
         module.setup(_diContainer).then(
-              (_) => _diContainer.allReady().then(
-                    (_) => onInit(),
-                  ),
+              (_) => _diContainer.allReady().then((_) => onInit()),
             );
-        break;
+    }
+  }
+
+  void _init(Function() onInit, {bool isNeedNotify = true}) {
+    final module = this;
+
+    void complete() {
+      _isInitialized = true;
+      if (isNeedNotify) _notify();
+      onInit();
     }
 
-    _isInitialized = true;
-    if (isNeedNotify) _notify();
+    if (dependencies.isEmpty) {
+      _runSetup(complete, module);
+    } else {
+      final depFutures = dependencies.map((dep) {
+        final completer = Completer<void>();
+        dep._diContainer = DiContainer.fromScope(_diContainer);
+        dep._init(completer.complete, isNeedNotify: false);
+        return completer.future;
+      }).toList();
+
+      Future.wait(depFutures).then((_) {
+        for (final dep in dependencies) {
+          _diContainer.mergeFrom(dep._diContainer);
+        }
+        _runSetup(complete, module);
+      });
+    }
   }
 
   /// Notifies all listeners about changes in the module state.
@@ -91,6 +113,9 @@ sealed class BaseDiModule extends ChangeNotifier implements Scope {
   /// - [parent]: The parent DI module whose scope will be used for updating.
   void _updateScope(BaseDiModule? parent) {
     _diContainer.updateScope(parent?._diContainer);
+    for (final dep in dependencies) {
+      _diContainer.mergeFrom(dep._diContainer);
+    }
   }
 
   /// Pops the current scope
@@ -99,6 +124,7 @@ sealed class BaseDiModule extends ChangeNotifier implements Scope {
   /// Returns a [Future] that completes once the scope has been reset.
   Future<void> _popScope() async {
     await _reset(isNeedNotify: false);
+    await Future.wait(dependencies.map((dep) => dep._popScope()));
   }
 
   /// Resets the current module's scope

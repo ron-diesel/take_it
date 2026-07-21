@@ -112,6 +112,11 @@ class DiContainer implements SyncRegistrar, AsyncRegistrar {
     }
   }
 
+  void mergeFrom(DiContainer other) {
+    _parentEntities.addAll(other._parentEntities);
+    _parentEntities.addAll(other._entities);
+  }
+
   void _checkScope<T>() {
     if (_entities.containsKey(T)) {
       throw Exception("$T is already registered in current scope");

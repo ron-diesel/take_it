@@ -8,6 +8,8 @@ part of 'base_di_module.dart';
 /// dependency registrations using a [SyncRegistrar],
 /// which handles the registration of non-async factories and instances.
 abstract class DiModule extends BaseDiModule implements Scope {
+  DiModule({super.dependencies = const []});
+
   /// Sets up the module by registering dependencies
   /// into the provided [SyncRegistrar].
   ///

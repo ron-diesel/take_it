@@ -169,6 +169,66 @@ Widget build(BuildContext context) {
 
 This ensures the user sees a loading state while the necessary dependencies are being initialized.
 
+### Module Dependencies
+
+Instead of nesting multiple `DiScopeBuilder` widgets, a module can declare its own dependencies via the `dependencies`
+constructor parameter. Dependency modules are initialized before the main module's `setup()` runs, and their
+registrations are available through the same scope.
+
+```dart
+// Before: nested DiScopeBuilder widgets
+DiScopeBuilder(
+  createModule: MediaDiModule.new,
+  builder: (_, __) => DiScopeBuilder(
+    createModule: BannerDiModule.new,
+    builder: (_, __) => DiScopeBuilder(
+      createModule: ToursDiModule.new,
+      builder: (context, scope) => ToursScreen(
+        toursBloc: scope.get<ToursBloc>(),
+        bannerBloc: scope.get<BannerBloc>(),
+      ),
+    ),
+  ),
+)
+
+// After: single DiScopeBuilder, deps declared in the module
+class ToursDiModule extends DiModule {
+  ToursDiModule() : super(dependencies: [MediaDiModule(), BannerDiModule()]);
+
+  @override
+  void setup(SyncRegistrar it) {
+    it.registerFactory(() => ToursBloc(repo: get<ToursRepo>()));
+  }
+}
+
+DiScopeBuilder(
+  createModule: ToursDiModule.new,
+  builder: (context, scope) => ToursScreen(
+    toursBloc: scope.get<ToursBloc>(),
+    bannerBloc: scope.get<BannerBloc>(), // inherited from BannerDiModule
+  ),
+)
+```
+
+All dependency registrations are merged into the same `_parentEntities` map via `mergeFrom` — later deps overwrite
+earlier ones for the same type. The main module's own `setup()` writes to `_entities`, which is always checked first
+by `get()`.
+
+```dart
+class MyModule extends DiModule {
+  // ModuleB is merged after ModuleA — its String registration wins over ModuleA's
+  MyModule() : super(dependencies: [ModuleA(), ModuleB()]);
+
+  @override
+  void setup(SyncRegistrar it) {
+    // registered in _entities — always wins over anything in _parentEntities
+    it.registerFactory<String>(() => 'own');
+  }
+}
+```
+
+Dependencies are disposed automatically when the main module is disposed.
+
 ## Advanced Topics
 
 ### Scoped Hierarchies
